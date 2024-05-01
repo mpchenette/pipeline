@@ -1,0 +1,69 @@
+parameters:
+  # GENERAL
+  - { name: environment,  values: [dev, test, prod] } # REQUIRED
+  - { name: location,     default: southcentralus }
+  - { name: build_app,    default: true }
+  - { name: deploy_app,   default: false }
+  - { name: deploy_infra, default: false }
+  - { name: deployment_type, default: cicd, values: [ci, cd, cicd] }
+
+  # INFRASTRUCTURE
+  - { name: infra_language,   default: bicep, values: [arm, bicep, terraform, ansible] }
+  - { name: infra_file_path,  default: . }
+  - { name: infra_file,       default: main.bicep }
+  - { name: infra_param_file, default: }
+  - { name: infra_pre_script, default: }
+
+variables:
+  - { name: service_connection, value: "sc-${{ variables['System.TeamProject'] }}-${{ parameters.environment }}" }
+  - { name: resource_group, value: "rg-${{ variables['System.TeamProject'] }}-${{ parameters.environment }}-001" }
+
+stages:
+  - stage: build_app
+    displayName: Build Application
+    condition: ${{ eq(parameters.build_app, true) }}
+    jobs:
+      - deployment: ${{ variables['System.TeamProject'] }}
+        environment: ${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: echo build app
+
+  - stage: deploy_infra
+    displayName: Deploy Infrastructure
+    condition: ${{ eq(parameters.deploy_infra, true) }}
+    jobs:
+      - deployment: ${{ variables['System.TeamProject'] }}
+        environment: ${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Must checkout self; Also checkout provided repos; https://learn.microsoft.com/en-us/azure/devops/pipelines/process/deployment-jobs?view=azure-devops#:~:text=your%20job%20with-,checkout%3A%20self,-.
+                - template: general/checkout.yml
+                  parameters:
+                    repositories: ["self", "git://infrastructure/${{ parameters.infra_language }}"]#, "parameters"]
+
+                - ${{ if ne(length(parameters.infra_pre_script), 0) }}:
+                  - template: script/pwsh.yml
+                    parameters:
+                      script: ${{ parameters.infra_pre_script }}
+                      parameters: "-source_directory parameters -source_files @('app1.agw.bicepparam', 'app2.agw.bicepparam') -target_file 'agw.json'"
+
+                - template: iac/${{ parameters.infra_language }}.yml
+                  parameters:
+                    ${{ insert }}: ${{ parameters }}
+
+  - stage: deploy_app
+    displayName: Deploy Application
+    condition: ${{ eq(parameters.deploy_app, true) }}
+    jobs:
+      - deployment: ${{ variables['System.TeamProject'] }}
+        environment: ${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: echo deploy app

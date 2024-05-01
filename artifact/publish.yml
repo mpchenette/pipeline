@@ -1,0 +1,6 @@
+steps:
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Artifact
+    inputs:
+      targetPath: $(System.DefaultWorkingDirectory)/agw.parameters.json
+      artifact: parameters

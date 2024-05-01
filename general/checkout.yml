@@ -1,0 +1,3 @@
+steps:
+- ${{ each repository in parameters.repositories }}:
+  - checkout: ${{ repository }}

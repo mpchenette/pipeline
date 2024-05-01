@@ -1,0 +1,9 @@
+steps:
+- script: az login --service-principal -u $(client_id) -p $(client_secret) --tenant b3cbb45e-6152-433f-bfe2-ac90a78d1408
+  displayName: Log into Azure
+
+- script: ansible-playbook playbook.yml
+  displayName: Run Ansible Playbook
+
+- script: cat ~/ansible_test_file.txt
+  displayName: Print file contents

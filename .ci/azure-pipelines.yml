@@ -1,0 +1,9 @@
+parameters:
+  - name: environment
+    values: [dev, test, prod]
+    default: dev
+
+extends:
+  template: ../main.yml
+  parameters:
+    environment: ${{ parameters.environment }}

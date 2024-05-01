@@ -1,0 +1,4 @@
+steps:
+- template: arm.yml
+  parameters:
+    ${{ insert }}: ${{ parameters }}

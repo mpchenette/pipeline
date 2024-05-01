@@ -1,0 +1,5 @@
+  # # ADD STEP TO DOWNLOAD PUBLISHED ARTIFACT
+  # - task: DownloadPipelineArtifact@2
+  #   inputs:
+  #     artifact: parameters
+  #     path: $(System.DefaultWorkingDirectory)/agw.parameters.json

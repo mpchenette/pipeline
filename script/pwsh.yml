@@ -1,0 +1,3 @@
+steps:
+  - pwsh: ${{ parameters.script }} ${{ parameters.parameters }}
+    displayName: Combine Individual Parameter Files

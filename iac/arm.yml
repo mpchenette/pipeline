@@ -1,0 +1,30 @@
+steps:
+  # Create Azure resources using the specified Bicep file
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: ${{ parameters.infra_language }} - Deploy Azure Resources
+    inputs:
+      azureResourceManagerConnection: $(service_connection)
+      resourceGroupName: $(resource_group)
+      location: $(location)
+      csmFile: ${{ parameters.infra_file_path }}/${{ parameters.infra_file }}
+      ${{ if ne(length(parameters.infra_param_file), 0) }}:
+        csmParametersFile: $(System.DefaultWorkingDirectory)/${{ parameters.infra_param_file }}
+      overrideParameters: -buildId $(Build.BuildId) -environment ${{ parameters.environment }}
+      deploymentName: unit-test-$(Build.BuildId)-deploy
+
+  # If this is a CI deployment (assumption is it's a unit test), delete the Azure resources we just created
+  - ${{ if eq(parameters.deployment_type, 'ci') }}:
+    # Create an empty bicep file
+    - bash: touch empty.bicep
+      displayName: ${{ parameters.infra_language }} - Create Empty File
+
+    # Deploy an empty bicep file in 'Complete' mode so that all resources are deleted
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: ${{ parameters.infra_language }} - Delete Azure Resources
+      inputs:
+        azureResourceManagerConnection: $(service_connection)
+        resourceGroupName: $(resource_group)
+        location: $(location)
+        csmFile: empty.bicep
+        deploymentMode: Complete
+        deploymentName: unit-test-$(Build.BuildId)-delete
